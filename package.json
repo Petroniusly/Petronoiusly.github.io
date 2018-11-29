@@ -1,0 +1,45 @@
+{
+	"name": "FrontCamp",
+	"version": "1.0.0",
+	"description": "SPA News frontCamp by Petr Blinkov",
+	"author": "Petroniusly",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Petroniusly/FrontCamp.git"
+	},
+	"scripts": {
+		"start": "webpack-dev-server --config webpack.dev.js",
+		"build": "webpack --config webpack.prod.js"
+	},
+	"dependencies": {
+		"@babel/polyfill": "^7.0.0",
+		"normalize.css": "^8.0.1"
+	},
+	"devDependencies": {
+		"@babel/cli": "^7.1.5",
+		"@babel/core": "^7.1.6",
+		"@babel/preset-env": "^7.1.6",
+		"babel-loader": "^8.0.4",
+		"bundle-loader": "^0.5.6",
+		"clean-webpack-plugin": "^1.0.0",
+		"css-loader": "^1.0.1",
+		"eslint": "^5.9.0",
+		"eslint-config-prettier": "^3.3.0",
+		"extract-loader": "^3.1.0",
+		"extract-text-webpack-plugin": "^3.0.2",
+		"file-loader": "^2.0.0",
+		"html-loader": "^0.5.5",
+		"html-webpack-plugin": "^3.2.0",
+		"husky": "^1.2.0",
+		"less": "^3.8.1",
+		"less-loader": "^4.1.0",
+		"mini-css-extract-plugin": "^0.4.5",
+		"prettier": "^1.15.2",
+		"style-loader": "^0.23.1",
+		"webpack": "^4.26.1",
+		"webpack-cli": "^3.1.2",
+		"webpack-dev-server": "^3.1.10",
+		"webpack-merge": "^4.1.4"
+	}
+}
