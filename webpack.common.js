@@ -1,12 +1,10 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const pathToIndexHtml = require.resolve('./src/index.html');
 
 module.exports = {
 	entry: {
-		app: './src/app.js',
-		article: './src/article/article.component.js'
+		app: './src/app.js'
 	},
 	plugins: [
 		new HtmlWebpackPlugin({title: 'Production'}),
@@ -17,6 +15,7 @@ module.exports = {
 	],
 	output: {
 		filename: '[name].bundle.js',
+		chunkFilename: '[name].bundle.js',
 		path: path.resolve(__dirname, 'dist')
 	},
 	module: {
@@ -52,10 +51,6 @@ module.exports = {
 						}
 					}
 				]
-			},
-			{
-				test: /\.bundle\.js$/,
-				use: 'bundle-loader'
 			}
 		]
 	}
