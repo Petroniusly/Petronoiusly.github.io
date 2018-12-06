@@ -74,7 +74,7 @@ helper.on(helper.find('button'), 'click', () => {
       })
       .catch(error => {
         import(
-          /* webpackChunkName: "article" */
+          /* webpackChunkName: "errorHandler" */
           './common/errorHandler/errorHandler.component'
           ).then(({ErrorHandler}) => {
           let errorHandler = new ErrorHandler(error);

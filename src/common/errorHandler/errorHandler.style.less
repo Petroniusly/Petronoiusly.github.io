@@ -1,12 +1,14 @@
 @import '../../less/variables.less';
 
-.body_hidden{
+.body_hidden {
   overflow: hidden;
 }
-.popup, .popup *{
+
+.popup, .popup * {
   box-sizing: border-box;
 }
-.popup{
+
+.popup {
   position: fixed;
   top: 0;
   left: 0;
@@ -19,10 +21,12 @@
   justify-content: center;
   align-items: center;
 }
-.popup_hide{
+
+.popup_hide {
   display: none;
 }
-.popup__body{
+
+.popup__body {
 
   width: 613px;
   height: 448px;
@@ -31,21 +35,21 @@
   padding: 0;
   display: block;
   transition: -webkit-transform .4s ease;
-  transition:         transform .4s ease;
+  transition: transform .4s ease;
   -webkit-transform: translate(0, -200%);
   -ms-transform: translate(0, -200%);
   transform: translate(0, -200%);
   opacity: 0;
 }
-.popup__body_visible{
+
+.popup__body_visible {
   -webkit-transform: translate(0, 0);
   -ms-transform: translate(0, 0);
   transform: translate(0, 0);
   opacity: 1;
 }
 
-
-.popup-head{
+.popup-head {
   width: 100%;
   min-height: 290px;
   background: black;
@@ -55,18 +59,19 @@
   align-items: center;
   justify-content: center;
 }
-.popup-head__title{
+
+.popup-head__title {
   color: white;
   font: 600 55px Arial, "sans-serif";
   text-align: center;
 }
 
-.popup-content{
+.popup-content {
   padding: 20px;
   text-align: center;
 }
 
-.popup__button{
+.popup__button {
   display: inline-block;
   vertical-align: top;
   padding: 0 35px;
@@ -80,6 +85,6 @@
   transition: 0.25s ease;
 }
 
-.popup__button:hover{
+.popup__button:hover {
   background: @secondaryColor;
 }
