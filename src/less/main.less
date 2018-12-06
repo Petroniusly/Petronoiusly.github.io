@@ -1,0 +1,60 @@
+@import '../../node_modules/normalize.css/normalize.css';
+@import 'variables.less';
+
+.flex-item_content-width {
+	flex: 0 0 auto; /* just content width */
+}
+
+.flex-item_only-grow {
+	flex: 1 0 auto; /* content width and grow */
+}
+
+.flex-item_only-shrink {
+	flex: 0 1 auto; /* content width and shrink */
+}
+
+.flex-item_flexible {
+	flex: 1 1 auto;
+}
+
+.button {
+	width: 150px;
+	height: 200px;
+}
+
+body {
+	width: 100vw;
+	height: 100vh;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: space-between;
+}
+
+header {
+	min-width: 100%;
+	height: @headerMinWidth;
+	display: flex;
+	background-color: @primaryColor;
+}
+
+main {
+	width: 100%;
+	overflow-y: scroll;
+	display: flex;
+	flex-grow: 1;
+}
+
+footer {
+	width: 100%;
+	min-height: @footerMinWidth;
+	display: flex;
+	background-color: @primaryColor;
+}
+
+.wrapper {
+	flex: 0 1 @contentWidth;
+}
+
