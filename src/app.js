@@ -1,11 +1,12 @@
 import '@babel/polyfill';
-import FetchService from './common/fetch/fetch.component';
+import FetchFactory from './common/fetch/fetch.factory';
 import {helper} from './common/helper';
+import {config} from './config'
 import Element from './elements/element/element.component';
 import Wrapper from './elements/wrapper/wrapper.component';
 import './less/main.less';
 
-const fetchService = new FetchService;
+const fetchFactory = new FetchFactory(config);
 const App = new Element('div');
 
 const Header = new Element('header');
@@ -50,7 +51,16 @@ helper.on(helper.find('button'), 'click', () => {
     /* webpackChunkName: "article" */
     './elements/article/article.component'
     ).then(({Article}) => {
-    fetchService.request()
+    let request = new Proxy(fetchFactory, {
+      get: function (target, name) {
+        if (name === "send") {
+          console.log(target.options.method);
+          console.log(JSON.stringify(target.params))
+        }
+        return target[name];
+      }
+    });
+    request.send()
       .then(response => {
         return response.json();
       })
@@ -58,6 +68,10 @@ helper.on(helper.find('button'), 'click', () => {
         console.log(response);
         if (response.status === 'error') {
           throw(response);
+        } else if (response.status < 200 || response.status > 299) {
+          let error = new Error(response.message);
+          error.status = response.status;
+          throw(error);
         }
         let ArticleElement;
 
