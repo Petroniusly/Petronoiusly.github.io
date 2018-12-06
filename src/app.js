@@ -57,7 +57,7 @@ helper.on(helper.find('button'), 'click', () => {
           console.log(target.options.method);
           console.log(JSON.stringify(target.params))
         }
-        return target[name];
+        return Reflect.get(target, name);
       }
     });
     request.send()
