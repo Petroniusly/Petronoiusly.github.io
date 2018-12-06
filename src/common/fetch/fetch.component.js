@@ -8,7 +8,7 @@ export default class FetchService {
     }
 
     service = metadata;
-    service.url = metadata.url + '?' + this.getParams(metadata.params);
+    service.url = metadata.url + '?' + FetchService.getParams(metadata.params);
   }
 
   request() {

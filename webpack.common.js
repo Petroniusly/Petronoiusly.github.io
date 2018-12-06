@@ -9,13 +9,13 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({title: 'Production'}),
     new MiniCssExtractPlugin({
-      filename: "[name].css",
-      chunkFilename: "[id].css"
+      filename: "[name].[hash].css",
+      chunkFilename: "[id].[hash].css"
     })
   ],
   output: {
-    filename: '[name].bundle.js',
-    chunkFilename: '[name].bundle.js',
+    filename: '[name].[hash].bundle.js',
+    chunkFilename: '[name].[hash].bundle.js',
     path: path.resolve(__dirname, 'dist')
   },
   module: {
