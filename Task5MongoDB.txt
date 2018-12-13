@@ -1,0 +1,491 @@
+All query:
+cd ..\..\Program Files\MongoDB\Server\4.0\bin
+mongod
+mongoimport --db frontcamp --collection restaurants --file D:\frontCamp\Working\MongoDBTask\restaurants.json
+mongo
+use frontcamp
+db.restaurants.count()
+db.restaurants.find({ borough: "Brooklyn" }).count()
+db.restaurants.findOne()
+db.restaurants.find({cuisine: "Chinese", borough: "Queens" }).count()
+db.restaurants.aggregate([ 
+	{ $match : { grades: { $elemMatch: { grade: { $exists: true } } } } },
+	{ $unwind: '$grades' },
+	{ $group: { _id:'$_id', max: { $max: '$grades.score' } } },
+	{ $sort : { max : -1 } },
+	{ $limit : 1},
+	{ $project: {  _id:1 } } ,
+])
+db.restaurants.updateMany(
+	{ borough: "Manhattan" },
+	{ 
+		$push: {
+			grades: {
+				grade: "A", score: 7, date: new Date()
+			}
+		}
+	}
+)
+ db.restaurants.find(
+ 	{ 'grades.8.score' : { $lt: 7 }},
+ 	{ _id: 0, name: 1 }
+ )
+ db.restaurants.aggregate([ 
+	{ $match : { 
+		cuisine:  "Seafood", 
+		grades: { $elemMatch: {
+			grade: { $eq: "B" } , 
+			date: {$gte: ISODate("2014-02-01T00:00:00.0Z"), $lt: ISODate("2014-03-01T00:00:00.0Z")}
+		}}
+	} },
+	{ $project: {  _id: 1,  borough: 1 } }
+	])
+db.restaurants.createIndex( { name: 1 }, { name: "nameIndex" } )
+db.restaurants.find({ name: "Glorious Food" }).explain()
+db.restaurants.dropIndex( "nameIndex" )
+db.restaurants.getIndexes()
+db.restaurants.createIndex( { restaurant_id: 1, borough: 1 }, { name: "restaurantIdx" } )
+db.restaurants.find({ restaurant_id: "41098650" }, { _id: 0, borough: 1 }).explain()
+db.restaurants.createIndex( { cuisine: 1 }, { name: "cuisineIdx", partialFilterExpression: { borough: "Staten Island"} } )
+db.restaurants.find({ borough: "Staten Island", cuisine: "American" }).explain()
+db.restaurants.find({ borough: "Staten Island", name: "Bagel Land" }).explain()
+db.restaurants.find({ borough: "Queens", cuisine: "Pizza" }).explain()
+db.restaurants.createIndex( { "grades.8.score":1, name:1 }, { name: "gradesIdx",  partialFilterExpression: { "grades.8.score": { $lt: 7 }} } )
+db.restaurants.find(
+ 	{ 'grades.8.score' : { $lt: 7 }},
+ 	{ _id: 0, name: 1 }
+).explain()
+
+
+Query with response by tasks:
+3.1 
+query:
+db.restaurants.find({cuisine: "Chinese", borough: "Queens" }).count()
+result:
+728
+
+3.2
+query:
+db.restaurants.aggregate([ 
+	{ $match : { grades: { $elemMatch: { grade: { $exists: true } } } } },
+	{ $unwind: '$grades' },
+	{ $group: { _id:'$_id', max: { $max: '$grades.score' } } },
+	{ $sort : { max : -1 } },
+	{ $limit : 1},
+	{ $project: {  _id:1 } } 
+	])
+result:
+{ "_id" : ObjectId("5c0f6236f19c602022ab4391") }
+
+3.3
+query:
+db.restaurants.updateMany(
+	{ borough: "Manhattan" },
+	{ 
+		$push: {
+			grades: {
+				grade: "A", score: 7, date: new Date()
+			}
+		}
+	}
+)
+result:
+{ "acknowledged" : true, "matchedCount" : 10259, "modifiedCount" : 10259 }
+
+3.4
+query:
+ db.restaurants.find(
+ 	{ 'grades.8.score' : { $lt: 7 }},
+ 	{ _id: 0, name: 1 }
+ )
+result:
+{ "name" : "Silver Krust West Indian Restaurant" }
+{ "name" : "Pure Food" }
+
+3.5
+query:
+
+ db.restaurants.find({
+ 	cuisine:  "Seafood", 
+	grades: { $elemMatch: {
+		grade: { $eq: "B" } , 
+		date: {
+			$gte: ISODate("2014-02-01T00:00:00.0Z"), 
+			$lt: ISODate("2014-03-01T00:00:00.0Z")
+		}
+	}}
+ },
+ {
+ 	_id: 1,  borough: 1
+ })
+ 
+ или
+ 
+db.restaurants.aggregate([ 
+	{ $match : { 
+		cuisine:  "Seafood", 
+		grades: { $elemMatch: {
+			grade: { $eq: "B" } , 
+			date: {$gte: ISODate("2014-02-01T00:00:00.0Z"), $lt: ISODate("2014-03-01T00:00:00.0Z")}
+		}}
+	} },
+	{ $project: {  _id: 1,  borough: 1 } }
+	])
+result:
+{ "_id" : ObjectId("5c0f6237f19c602022ab779b"), "borough" : "Bronx" }
+{ "_id" : ObjectId("5c0f6237f19c602022ab7a16"), "borough" : "Manhattan" }
+
+4.1
+query:
+db.restaurants.createIndex( { name: 1 }, { name: "nameIndex" } )
+result:
+db.restaurants.find({ name: "Glorious Food" }).explain()
+{
+        "queryPlanner" : {
+                "plannerVersion" : 1,
+                "namespace" : "frontcamp.restaurants",
+                "indexFilterSet" : false,
+                "parsedQuery" : {
+                        "name" : {
+                                "$eq" : "Glorious Food"
+                        }
+                },
+                "winningPlan" : {
+                        "stage" : "FETCH",
+                        "inputStage" : {
+                                "stage" : "IXSCAN",
+                                "keyPattern" : {
+                                        "name" : 1
+                                },
+                                "indexName" : "nameIndex",
+                                "isMultiKey" : false,
+                                "multiKeyPaths" : {
+                                        "name" : [ ]
+                                },
+                                "isUnique" : false,
+                                "isSparse" : false,
+                                "isPartial" : false,
+                                "indexVersion" : 2,
+                                "direction" : "forward",
+                                "indexBounds" : {
+                                        "name" : [
+                                                "[\"Glorious Food\", \"Glorious Food\"]"
+                                        ]
+                                }
+                        }
+                },
+                "rejectedPlans" : [ ]
+        },
+        "serverInfo" : {
+                "host" : "EPBYMINW7639",
+                "port" : 27017,
+                "version" : "4.0.4",
+                "gitVersion" : "f288a3bdf201007f3693c58e140056adf8b04839"
+        },
+        "ok" : 1
+}
+4.2
+query:
+db.restaurants.dropIndex( "nameIndex" )
+result:
+db.restaurants.getIndexes()
+[
+        {
+                "v" : 2,
+                "key" : {
+                        "_id" : 1
+                },
+                "name" : "_id_",
+                "ns" : "frontcamp.restaurants"
+        }
+]
+
+4.3
+query:
+db.restaurants.createIndex( { restaurant_id: 1, borough: 1 }, { name: "restaurantIdx" } )
+result:
+db.restaurants.find({ restaurant_id: "41098650" }, { _id: 0, borough: 1 }).explain()
+{
+        "queryPlanner" : {
+                "plannerVersion" : 1,
+                "namespace" : "frontcamp.restaurants",
+                "indexFilterSet" : false,
+                "parsedQuery" : {
+                        "restaurant_id" : {
+                                "$eq" : "41098650"
+                        }
+                },
+                "winningPlan" : {
+                        "stage" : "PROJECTION",
+                        "transformBy" : {
+                                "_id" : 0,
+                                "borough" : 1
+                        },
+                        "inputStage" : {
+                                "stage" : "IXSCAN",
+                                "keyPattern" : {
+                                        "restaurant_id" : 1,
+                                        "borough" : 1
+                                },
+                                "indexName" : "restaurantIdx",
+                                "isMultiKey" : false,
+                                "multiKeyPaths" : {
+                                        "restaurant_id" : [ ],
+                                        "borough" : [ ]
+                                },
+                                "isUnique" : false,
+                                "isSparse" : false,
+                                "isPartial" : false,
+                                "indexVersion" : 2,
+                                "direction" : "forward",
+                                "indexBounds" : {
+                                        "restaurant_id" : [
+                                                "[\"41098650\", \"41098650\"]"
+                                        ],
+                                        "borough" : [
+                                                "[MinKey, MaxKey]"
+                                        ]
+                                }
+                        }
+                },
+                "rejectedPlans" : [ ]
+        },
+        "serverInfo" : {
+                "host" : "EPBYMINW7639",
+                "port" : 27017,
+                "version" : "4.0.4",
+                "gitVersion" : "f288a3bdf201007f3693c58e140056adf8b04839"
+        },
+        "ok" : 1
+}
+4.4
+query:
+db.restaurants.createIndex( { cuisine: 1 }, { name: "cuisineIdx", partialFilterExpression: { borough: "Staten Island"} } )
+results:
+db.restaurants.find({ borough: "Staten Island", cuisine: "American" }).explain()
+{
+        "queryPlanner" : {
+                "plannerVersion" : 1,
+                "namespace" : "frontcamp.restaurants",
+                "indexFilterSet" : false,
+                "parsedQuery" : {
+                        "$and" : [
+                                {
+                                        "borough" : {
+                                                "$eq" : "Staten Island"
+                                        }
+                                },
+                                {
+                                        "cuisine" : {
+                                                "$eq" : "American"
+                                        }
+                                }
+                        ]
+                },
+                "winningPlan" : {
+                        "stage" : "FETCH",
+                        "filter" : {
+                                "borough" : {
+                                        "$eq" : "Staten Island"
+                                }
+                        },
+                        "inputStage" : {
+                                "stage" : "IXSCAN",
+                                "keyPattern" : {
+                                        "cuisine" : 1
+                                },
+                                "indexName" : "cuisineIdx",
+                                "isMultiKey" : false,
+                                "multiKeyPaths" : {
+                                        "cuisine" : [ ]
+                                },
+                                "isUnique" : false,
+                                "isSparse" : false,
+                                "isPartial" : true,
+                                "indexVersion" : 2,
+                                "direction" : "forward",
+                                "indexBounds" : {
+                                        "cuisine" : [
+                                                "[\"American\", \"American\"]"
+                                        ]
+                                }
+                        }
+                },
+                "rejectedPlans" : [ ]
+        },
+        "serverInfo" : {
+                "host" : "EPBYMINW7639",
+                "port" : 27017,
+                "version" : "4.0.4",
+                "gitVersion" : "f288a3bdf201007f3693c58e140056adf8b04839"
+        },
+        "ok" : 1
+}
+db.restaurants.find({ borough: "Staten Island", name: "Bagel Land" }).explain()
+{
+        "queryPlanner" : {
+                "plannerVersion" : 1,
+                "namespace" : "frontcamp.restaurants",
+                "indexFilterSet" : false,
+                "parsedQuery" : {
+                        "$and" : [
+                                {
+                                        "borough" : {
+                                                "$eq" : "Staten Island"
+                                        }
+                                },
+                                {
+                                        "name" : {
+                                                "$eq" : "Bagel Land"
+                                        }
+                                }
+                        ]
+                },
+                "winningPlan" : {
+                        "stage" : "COLLSCAN",
+                        "filter" : {
+                                "$and" : [
+                                        {
+                                                "borough" : {
+                                                        "$eq" : "Staten Island"
+                                                }
+                                        },
+                                        {
+                                                "name" : {
+                                                        "$eq" : "Bagel Land"
+                                                }
+                                        }
+                                ]
+                        },
+                        "direction" : "forward"
+                },
+                "rejectedPlans" : [ ]
+        },
+        "serverInfo" : {
+                "host" : "EPBYMINW7639",
+                "port" : 27017,
+                "version" : "4.0.4",
+                "gitVersion" : "f288a3bdf201007f3693c58e140056adf8b04839"
+        },
+        "ok" : 1
+}
+db.restaurants.find({ borough: "Queens", cuisine: "Pizza" }).explain()
+{
+        "queryPlanner" : {
+                "plannerVersion" : 1,
+                "namespace" : "frontcamp.restaurants",
+                "indexFilterSet" : false,
+                "parsedQuery" : {
+                        "$and" : [
+                                {
+                                        "borough" : {
+                                                "$eq" : "Queens"
+                                        }
+                                },
+                                {
+                                        "cuisine" : {
+                                                "$eq" : "Pizza"
+                                        }
+                                }
+                        ]
+                },
+                "winningPlan" : {
+                        "stage" : "COLLSCAN",
+                        "filter" : {
+                                "$and" : [
+                                        {
+                                                "borough" : {
+                                                        "$eq" : "Queens"
+                                                }
+                                        },
+                                        {
+                                                "cuisine" : {
+                                                        "$eq" : "Pizza"
+                                                }
+                                        }
+                                ]
+                        },
+                        "direction" : "forward"
+                },
+                "rejectedPlans" : [ ]
+        },
+        "serverInfo" : {
+                "host" : "EPBYMINW7639",
+                "port" : 27017,
+                "version" : "4.0.4",
+                "gitVersion" : "f288a3bdf201007f3693c58e140056adf8b04839"
+        },
+        "ok" : 1
+}
+4.5
+query:
+db.restaurants.createIndex( { "grades.8.score":1, name:1 }, { name: "gradesIdx",  partialFilterExpression: { "grades.8.score": { $lt: 7 }} } )
+result:
+ db.restaurants.find(
+ 	{ 'grades.8.score' : { $lt: 7 }},
+ 	{ _id: 0, name: 1 }
+ ).explain()
+ {
+        "queryPlanner" : {
+                "plannerVersion" : 1,
+                "namespace" : "frontcamp.restaurants",
+                "indexFilterSet" : false,
+                "parsedQuery" : {
+                        "grades.8.score" : {
+                                "$lt" : 7
+                        }
+                },
+                "winningPlan" : {
+                        "stage" : "PROJECTION",
+                        "transformBy" : {
+                                "_id" : 0,
+                                "name" : 1
+                        },
+                        "inputStage" : {
+                                "stage" : "IXSCAN",
+                                "keyPattern" : {
+                                        "grades.8.score" : 1,
+                                        "name" : 1
+                                },
+                                "indexName" : "gradesIdx",
+                                "isMultiKey" : false,
+                                "multiKeyPaths" : {
+                                        "grades.8.score" : [ ],
+                                        "name" : [ ]
+                                },
+                                "isUnique" : false,
+                                "isSparse" : false,
+                                "isPartial" : true,
+                                "indexVersion" : 2,
+                                "direction" : "forward",
+                                "indexBounds" : {
+                                        "grades.8.score" : [
+                                                "[-inf.0, 7.0)"
+                                        ],
+                                        "name" : [
+                                                "[MinKey, MaxKey]"
+                                        ]
+                                }
+                        }
+                },
+                "rejectedPlans" : [ ]
+        },
+        "serverInfo" : {
+                "host" : "EPBYMINW7639",
+                "port" : 27017,
+                "version" : "4.0.4",
+                "gitVersion" : "f288a3bdf201007f3693c58e140056adf8b04839"
+        },
+        "ok" : 1
+}
+ 
+
+
+
+
+
+
+
+
+
+
