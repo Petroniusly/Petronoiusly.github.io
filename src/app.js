@@ -1,11 +1,12 @@
 import '@babel/polyfill';
-import Element from './element/element.component';
-import Wrapper from './wrapper/wrapper.component';
-import FetchService from './services/fetch.component';
-import { helper } from './helper';
+import FetchFactory from './common/fetch/fetch.factory';
+import {helper} from './common/helper';
+import {config} from './config'
+import Element from './elements/element/element.component';
+import Wrapper from './elements/wrapper/wrapper.component';
 import './less/main.less';
 
-const fetchService = new FetchService;
+const fetchFactory = new FetchFactory(config);
 const App = new Element('div');
 
 const Header = new Element('header');
@@ -23,47 +24,79 @@ Button.elem.type = 'button';
 Button.elem.classList.add('button');
 Button.elem.innerHTML = 'Show articles';
 
+const NewsDisclaimer = new Element('a');
+NewsDisclaimer.elem.href = 'https://newsapi.org/';
+NewsDisclaimer.elem.innerHTML = 'powered by NewsAPI.org';
+
 
 HeaderWrapper.append(Button.elem);
+FooterWrapper.append(NewsDisclaimer.elem);
 
 Header.append(HeaderWrapper.elem);
 Main.append(MainWrapper.elem);
 Footer.append(FooterWrapper.elem);
 
+App.elem.classList.add('app-body');
 App
-	.append(Header.elem)
-	.append(Main.elem)
-	.append(Footer.elem)
-	.makeFragment()
-	.appendToElement();
+  .append(Header.elem)
+  .append(Main.elem)
+  .append(Footer.elem)
+  .makeFragment()
+  .appendToElement();
 
-function getComponent () {
-	return
-};
 
-helper.on(helper.find('button'), 'click', e => {
+helper.on(helper.find('button'), 'click', () => {
 
-	import (
-		/* webpackChunkName: "article" */
-		'./article/article.component'
-		).then(({default: Article}) => {
-			fetchService.request()
-				.then(function(response) {
-					return response.json();
-				})
-				.then(responce => {
-					let ArticleElement;
+  import (
+    /* webpackChunkName: "article" */
+    './elements/article/article.component'
+    ).then(({Article}) => {
+    let request = new Proxy(fetchFactory, {
+      get: function (target, name) {
+        if (name === "send") {
+          console.log(target.options.method);
+          console.log(JSON.stringify(target.params))
+        }
+        return Reflect.get(target, name);
+      }
+    });
+    request.send()
+      .then(response => {
+        return response.json();
+      })
+      .then(response => {
+        console.log(response);
+        if (response.status === 'error') {
+          throw(response);
+        } else if (response.status < 200 || response.status > 299) {
+          let error = new Error(response.message);
+          error.status = response.status;
+          throw(error);
+        }
+        let ArticleElement;
 
-					helper.remove('main', 'main section.wrapper');
+        helper.remove('main', 'main section.wrapper');
 
-					for (let i = 0; i < responce.sources.length; i++) {
-						ArticleElement = new Article(responce.sources[i]);
-						MainWrapper.append(ArticleElement.elem)
-					}
+        for (let i = 0; i < response.articles.length; i++) {
+          ArticleElement = new Article(response.articles[i]);
+          MainWrapper.append(ArticleElement.elem)
+        }
 
-					MainWrapper
-						.makeFragment()
-						.appendToElement(helper.find('main'))
-			});
-	});
+        MainWrapper
+          .makeFragment()
+          .appendToElement(helper.find('main'))
+      })
+      .catch(error => {
+        import(
+          /* webpackChunkName: "errorHandler" */
+          './common/errorHandler/errorHandler.component'
+          ).then(({ErrorHandler}) => {
+          let errorHandler = new ErrorHandler(error);
+
+          errorHandler.makeFragment();
+          helper.find('body').insertBefore(errorHandler.elem, helper.find('body > header'));
+          errorHandler.openPopup();
+        });
+      })
+  });
 });

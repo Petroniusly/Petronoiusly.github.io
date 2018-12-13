@@ -18,10 +18,10 @@ export default class Element {
     return this;
   }
 
-	appendToElement(elem=document.body) {
-		if(this.fragmented) elem.appendChild(this.fragment);
-		else throw new Error('You need create fragment before appending to DOM.');
-	}
+  appendToElement(elem = document.body) {
+    if (this.fragmented) elem.appendChild(this.fragment);
+    else throw new Error('You need create fragment before appending to DOM.');
+  }
 
 
 }

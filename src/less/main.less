@@ -2,59 +2,66 @@
 @import 'variables.less';
 
 .flex-item_content-width {
-	flex: 0 0 auto; /* just content width */
+  flex: 0 0 auto; /* just content width */
 }
 
 .flex-item_only-grow {
-	flex: 1 0 auto; /* content width and grow */
+  flex: 1 0 auto; /* content width and grow */
 }
 
 .flex-item_only-shrink {
-	flex: 0 1 auto; /* content width and shrink */
+  flex: 0 1 auto; /* content width and shrink */
 }
 
 .flex-item_flexible {
-	flex: 1 1 auto;
+  flex: 1 1 auto;
 }
 
 .button {
-	width: 150px;
-	height: 200px;
+  width: 150px;
+  height: 100%;
 }
 
 body {
-	width: 100vw;
-	height: 100vh;
-	padding: 0;
-	margin: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	justify-content: space-between;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  text-align: center;
+}
+
+.app-body {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
 }
 
 header {
-	min-width: 100%;
-	height: @headerMinWidth;
-	display: flex;
-	background-color: @primaryColor;
+  min-width: 100%;
+  min-height: @headerMinWidth;
+  display: flex;
+  background-color: @primaryColor;
 }
 
 main {
-	width: 100%;
-	overflow-y: scroll;
-	display: flex;
-	flex-grow: 1;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  flex-grow: 1;
+  overflow-y: auto;
 }
 
 footer {
-	width: 100%;
-	min-height: @footerMinWidth;
-	display: flex;
-	background-color: @primaryColor;
+  width: 100%;
+  min-height: @footerMinWidth;
+  display: flex;
+  background-color: @primaryColor;
 }
 
 .wrapper {
-	flex: 0 1 @contentWidth;
+  flex: 0 1 @contentWidth;
 }
 
