@@ -4,27 +4,32 @@ mongo
 use frontcamp
 db.airlines.find({}).count()
 db.airlines.aggregate([
-  { $group : { _id : { class: "$class" }, count: { $sum: 1 } } }
+  { $group : { 
+    _id : "$class",
+    count: { $sum: 1 },
+	class: { $first: "$class" }
+  } },
+  { $project: { _id:0, class : 1, count: 1 } }
 ])
 db.airlines.aggregate([
 	{$match: { destCountry: { $ne : "United States"}}},
 	{ $group : { 
-		_id : { 
-			city: "$destCity"
-		}, 
+		_id : "$destCity", 
+		city: { $first: "$destCity" },
 		avgPassengers: { $avg: "$passengers" } 
 	} },
 	{ $sort : { avgPassengers : -1 } },
 	{ $limit : 3},
-	{ $project : {city : 1, avgPassengers: 1 } }
+	{ $project : { _id:0, avgPassengers: 1, city : 1 } }
 ])
 db.airlines.aggregate([
 	{$match: { destCountry: { $eq : "Latvia"}}},
 	{ $group : { 
 		_id: "$destCountry" ,
+		country: { $first: "$destCountry" },
 		carriers: { $addToSet: "$carrier" }
 	} },	
-	{ $project : {_id : 1, carriers: 1 } }
+	{ $project : {_id : 0, country: 1, carriers: 1 } }
 ])	
 db.airlines.aggregate([
 	{$match: { originCountry: { $eq : "United States"}, destCountry: { $in: ["Greece", "Italy", "Spain"]}}},
@@ -48,10 +53,17 @@ db.airlines.aggregate([
 		}, 
 		totalPassengers: { $sum: "$passengers" } 
 	} },
-	{ $sort : { state : -1 } },
-	{ $limit : 5},
-	{ $addFields: { location: "$_id" } },
-	{ $project : {totalPassengers:1, location:1, _id:0} }
+	{ $sort:{
+         count:-1
+    } },
+	{ $group : { 
+		_id : "$_id.state",
+		totalPassengers: { $first: "$totalPassengers"},
+		location: {$first: "$_id" }
+	} },
+	{ $sort : { "location.state" : 1 } },
+	{ $limit: 5 },
+	{ $project : {totalPassengers: 1, location: 1 , _id:0} }
 ])
 mongorestore -d frontcamp -c enron D:\frontCamp\Working\MongoDBTask2\enron\messages.bson
 mongo
@@ -76,32 +88,36 @@ db.enron.aggregate([
 4.1
 query:
 db.airlines.aggregate([
-  { $group : { _id : { class: "$class" }, count: { $sum: 1 } } }
+  { $group : { 
+    _id : "$class",
+    count: { $sum: 1 },
+	class: { $first: "$class" }
+  } },
+  { $project: { _id:0, class : 1, count: 1 } }
 ])
 result:
-{ "_id" : { "class" : "F" }, "count" : 140343 }
-{ "_id" : { "class" : "L" }, "count" : 23123 }
-{ "_id" : { "class" : "P" }, "count" : 5683 }
-{ "_id" : { "class" : "G" }, "count" : 17499 }
+{ "count" : 280686, "class" : "F" }
+{ "count" : 46246, "class" : "L" }
+{ "count" : 11366, "class" : "P" }
+{ "count" : 34998, "class" : "G" }
 
 4.2
 query:
 db.airlines.aggregate([
 	{$match: { destCountry: { $ne : "United States"}}},
 	{ $group : { 
-		_id : { 
-			city: "$destCity"
-		}, 
+		_id : "$destCity", 
+		city: { $first: "$destCity" },
 		avgPassengers: { $avg: "$passengers" } 
 	} },
 	{ $sort : { avgPassengers : -1 } },
 	{ $limit : 3},
-	{ $project : {city : 1, avgPassengers: 1 } }
+	{ $project : { _id:0, avgPassengers: 1, city : 1 } }
 ])
 result:
-{ "_id" : { "city" : "Abu Dhabi, United Arab Emirates" }, "avgPassengers" : 8052.380952380952 }
-{ "_id" : { "city" : "Dubai, United Arab Emirates" }, "avgPassengers" : 7176.596638655462 }
-{ "_id" : { "city" : "Guangzhou, China" }, "avgPassengers" : 7103.333333333333 }
+{ "city" : "Abu Dhabi, United Arab Emirates", "avgPassengers" : 8052.380952380952 }
+{ "city" : "Dubai, United Arab Emirates", "avgPassengers" : 7176.596638655462 }
+{ "city" : "Guangzhou, China", "avgPassengers" : 7103.333333333333 }
 
 4.3
 query:
@@ -109,36 +125,36 @@ db.airlines.aggregate([
 	{$match: { destCountry: { $eq : "Latvia"}}},
 	{ $group : { 
 		_id: "$destCountry" ,
+		country: { $first: "$destCountry" },
 		carriers: { $addToSet: "$carrier" }
 	} },	
-	{ $project : {_id : 1, carriers: 1 } }
+	{ $project : {_id : 0, country: 1, carriers: 1 } }
 ])	
 result:
-{ "_id" : "Latvia", "carriers" : [ "Uzbekistan Airways", "Blue Jet SP Z o o", "JetClub AG" ] }
+{ "country" : "Latvia", "carriers" : [ "Uzbekistan Airways", "Blue Jet SP Z o o", "JetClub AG" ] }
 
 4.4
 query:
 db.airlines.aggregate([
 	{$match: { originCountry: { $eq : "United States"}, destCountry: { $in: ["Greece", "Italy", "Spain"]}}},
 	{ $group : { 
-		_id : { 
-			city: "$carrier"
-		}, 
+		_id : "$carrier", 
+		carrier: { $first: "$carrier" },
 		total: { $sum: "$passengers" } 
 	} },
 	{ $sort : { total : -1 } },
 	{ $limit : 10},
 	{ $skip : 3 },
-	{ $project : {_id : 1, total: 1 } }
+	{ $project : {_id : 0, carrier: 1, total: 1 } }
 ])
 result:
-{ "_id" : { "city" : "Compagnia Aerea Italiana" }, "total" : 280256 }
-{ "_id" : { "city" : "United Air Lines Inc." }, "total" : 229936 }
-{ "_id" : { "city" : "Emirates" }, "total" : 100903 }
-{ "_id" : { "city" : "Air Europa" }, "total" : 94968 }
-{ "_id" : { "city" : "Meridiana S.p.A" }, "total" : 20308 }
-{ "_id" : { "city" : "Norwegian Air Shuttle ASA" }, "total" : 13344 }
-{ "_id" : { "city" : "VistaJet Limited" }, "total" : 183 }
+{ "carrier" : "Compagnia Aerea Italiana", "total" : 560512 }
+{ "carrier" : "United Air Lines Inc.", "total" : 459872 }
+{ "carrier" : "Emirates", "total" : 201806 }
+{ "carrier" : "Air Europa", "total" : 189936 }
+{ "carrier" : "Meridiana S.p.A", "total" : 40616 }
+{ "carrier" : "Norwegian Air Shuttle ASA", "total" : 26688 }
+{ "carrier" : "VistaJet Limited", "total" : 366 }
 
 4.5
 query:
@@ -151,17 +167,24 @@ db.airlines.aggregate([
 		}, 
 		totalPassengers: { $sum: "$passengers" } 
 	} },
-	{ $sort : { state : -1 } },
-	{ $limit : 5},
-	{ $addFields: { location: "$_id" } },
-	{ $project : {totalPassengers:1, location:1, _id:0} }
+	{ $sort:{
+         count:-1
+    } },
+	{ $group : { 
+		_id : "$_id.state",
+		totalPassengers: { $first: "$totalPassengers"},
+		location: {$first: "$_id" }
+	} },
+	{ $sort : { "location.state" : 1 } },
+	{ $limit: 5 },
+	{ $project : {totalPassengers: 1, location: 1 , _id:0} }
 ])
 result:
-{ "totalPassengers" : 3726, "location" : { "state" : "Utah", "city" : "Vernal, UT" } }
-{ "totalPassengers" : 5258, "location" : { "state" : "North Dakota", "city" : "Devils Lake, ND" } }
-{ "totalPassengers" : 3971, "location" : { "state" : "Puerto Rico", "city" : "Mayaguez, PR" } }
-{ "totalPassengers" : 5508, "location" : { "state" : "Kansas", "city" : "Hays, KS" } }
-{ "totalPassengers" : 1901, "location" : { "state" : "Montana", "city" : "Glasgow, MT" } }
+{ "totalPassengers" : 7660, "location" : { "state" : "Alabama", "city" : "Muscle Shoals, AL" } }
+{ "totalPassengers" : 24, "location" : { "state" : "Alaska", "city" : "Soldotna, AK" } }
+{ "totalPassengers" : 16, "location" : { "state" : "Arizona", "city" : "Sedona, AZ" } }
+{ "totalPassengers" : 5496, "location" : { "state" : "Arkansas", "city" : "Jonesboro, AR" } }
+{ "totalPassengers" : 15370, "location" : { "state" : "California", "city" : "Concord, CA" } }
 
 5.1
 query:
