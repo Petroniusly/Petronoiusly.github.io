@@ -1,3 +1,7 @@
 module.exports = {
-	extends: 'prettier'
+	extends: 'prettier',
+  "env": {
+    "node": true,
+    "es6": true
+  }
 };
