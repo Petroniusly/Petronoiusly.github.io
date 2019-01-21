@@ -1,0 +1,215 @@
+cd ..\..\Program Files\MongoDB\Server\4.0\bin
+mongoimport.exe -d frontcamp -c airlines --type csv --headerline --file D:\frontCamp\Working\MongoDBTask2\airlines.csv\airlines.csv
+mongo
+use frontcamp
+db.airlines.find({}).count()
+db.airlines.aggregate([
+  { $group : { 
+    _id : "$class",
+    count: { $sum: 1 },
+	class: { $first: "$class" }
+  } },
+  { $project: { _id:0, class : 1, count: 1 } }
+])
+db.airlines.aggregate([
+	{$match: { destCountry: { $ne : "United States"}}},
+	{ $group : { 
+		_id : "$destCity", 
+		city: { $first: "$destCity" },
+		avgPassengers: { $avg: "$passengers" } 
+	} },
+	{ $sort : { avgPassengers : -1 } },
+	{ $limit : 3},
+	{ $project : { _id:0, avgPassengers: 1, city : 1 } }
+])
+db.airlines.aggregate([
+	{$match: { destCountry: { $eq : "Latvia"}}},
+	{ $group : { 
+		_id: "$destCountry" ,
+		country: { $first: "$destCountry" },
+		carriers: { $addToSet: "$carrier" }
+	} },	
+	{ $project : {_id : 0, country: 1, carriers: 1 } }
+])	
+db.airlines.aggregate([
+	{$match: { originCountry: { $eq : "United States"}, destCountry: { $in: ["Greece", "Italy", "Spain"]}}},
+	{ $group : { 
+		_id : { 
+			city: "$carrier"
+		}, 
+		total: { $sum: "$passengers" } 
+	} },
+	{ $sort : { total : -1 } },
+	{ $limit : 10},
+	{ $skip : 3 },
+	{ $project : {_id : 1, total: 1 } }
+])
+db.airlines.aggregate([
+	{$match: { originCountry: { $eq : "United States"} }},
+	{ $group : { 
+		_id : {
+				state: "$originState",
+				city: "$originCity"
+		}, 
+		totalPassengers: { $sum: "$passengers" } 
+	} },
+	{ $sort:{
+         count:-1
+    } },
+	{ $group : { 
+		_id : "$_id.state",
+		totalPassengers: { $first: "$totalPassengers"},
+		location: {$first: "$_id" }
+	} },
+	{ $sort : { "location.state" : 1 } },
+	{ $limit: 5 },
+	{ $project : {totalPassengers: 1, location: 1 , _id:0} }
+])
+mongorestore -d frontcamp -c enron D:\frontCamp\Working\MongoDBTask2\enron\messages.bson
+mongo
+use frontcamp
+db.enron.aggregate([
+	{ $project : {_id:1, From: "$headers.From", To: { $setUnion: ["$headers.To"]} } },
+	{ $unwind: "$To"},
+	{ $group: {
+		_id: {
+			From: "$From",
+			To: "$To"
+		},
+		sender: { $first: "$From"},
+		recipient: { $first: "$To"},
+		count: {$sum:1}
+	}},
+	{ $sort: {count: -1}},
+	{ $limit: 1},
+	{ $project: { _id:0, sender: 1, recipient: 1, count:1 }}
+])
+
+4.1
+query:
+db.airlines.aggregate([
+  { $group : { 
+    _id : "$class",
+    count: { $sum: 1 },
+	class: { $first: "$class" }
+  } },
+  { $project: { _id:0, class : 1, count: 1 } }
+])
+result:
+{ "count" : 280686, "class" : "F" }
+{ "count" : 46246, "class" : "L" }
+{ "count" : 11366, "class" : "P" }
+{ "count" : 34998, "class" : "G" }
+
+4.2
+query:
+db.airlines.aggregate([
+	{$match: { destCountry: { $ne : "United States"}}},
+	{ $group : { 
+		_id : "$destCity", 
+		city: { $first: "$destCity" },
+		avgPassengers: { $avg: "$passengers" } 
+	} },
+	{ $sort : { avgPassengers : -1 } },
+	{ $limit : 3},
+	{ $project : { _id:0, avgPassengers: 1, city : 1 } }
+])
+result:
+{ "city" : "Abu Dhabi, United Arab Emirates", "avgPassengers" : 8052.380952380952 }
+{ "city" : "Dubai, United Arab Emirates", "avgPassengers" : 7176.596638655462 }
+{ "city" : "Guangzhou, China", "avgPassengers" : 7103.333333333333 }
+
+4.3
+query:
+db.airlines.aggregate([
+	{$match: { destCountry: { $eq : "Latvia"}}},
+	{ $group : { 
+		_id: "$destCountry" ,
+		country: { $first: "$destCountry" },
+		carriers: { $addToSet: "$carrier" }
+	} },	
+	{ $project : {_id : 0, country: 1, carriers: 1 } }
+])	
+result:
+{ "country" : "Latvia", "carriers" : [ "Uzbekistan Airways", "Blue Jet SP Z o o", "JetClub AG" ] }
+
+4.4
+query:
+db.airlines.aggregate([
+	{$match: { originCountry: { $eq : "United States"}, destCountry: { $in: ["Greece", "Italy", "Spain"]}}},
+	{ $group : { 
+		_id : "$carrier", 
+		carrier: { $first: "$carrier" },
+		total: { $sum: "$passengers" } 
+	} },
+	{ $sort : { total : -1 } },
+	{ $limit : 10},
+	{ $skip : 3 },
+	{ $project : {_id : 0, carrier: 1, total: 1 } }
+])
+result:
+{ "carrier" : "Compagnia Aerea Italiana", "total" : 560512 }
+{ "carrier" : "United Air Lines Inc.", "total" : 459872 }
+{ "carrier" : "Emirates", "total" : 201806 }
+{ "carrier" : "Air Europa", "total" : 189936 }
+{ "carrier" : "Meridiana S.p.A", "total" : 40616 }
+{ "carrier" : "Norwegian Air Shuttle ASA", "total" : 26688 }
+{ "carrier" : "VistaJet Limited", "total" : 366 }
+
+4.5
+query:
+db.airlines.aggregate([
+	{$match: { originCountry: { $eq : "United States"} }},
+	{ $group : { 
+		_id : {
+				state: "$originState",
+				city: "$originCity"
+		}, 
+		totalPassengers: { $sum: "$passengers" } 
+	} },
+	{ $sort:{
+         count:-1
+    } },
+	{ $group : { 
+		_id : "$_id.state",
+		totalPassengers: { $first: "$totalPassengers"},
+		location: {$first: "$_id" }
+	} },
+	{ $sort : { "location.state" : 1 } },
+	{ $limit: 5 },
+	{ $project : {totalPassengers: 1, location: 1 , _id:0} }
+])
+result:
+{ "totalPassengers" : 7660, "location" : { "state" : "Alabama", "city" : "Muscle Shoals, AL" } }
+{ "totalPassengers" : 24, "location" : { "state" : "Alaska", "city" : "Soldotna, AK" } }
+{ "totalPassengers" : 16, "location" : { "state" : "Arizona", "city" : "Sedona, AZ" } }
+{ "totalPassengers" : 5496, "location" : { "state" : "Arkansas", "city" : "Jonesboro, AR" } }
+{ "totalPassengers" : 15370, "location" : { "state" : "California", "city" : "Concord, CA" } }
+
+5.1
+query:
+mongorestore -d frontcamp -c enron D:\frontCamp\Working\MongoDBTask2\enron\messages.bson
+mongo
+use frontcamp
+db.enron.aggregate([
+	{ $project : {_id:1, From: "$headers.From", To: { $setUnion: ["$headers.To"]} } },
+	{ $unwind: "$To"},
+	{ $group: {
+		_id: {
+			From: "$From",
+			To: "$To"
+		},
+		sender: { $first: "$From"},
+		recipient: { $first: "$To"},
+		count: {$sum:1}
+	}},
+	{ $sort: {count: -1}},
+	{ $limit: 1},
+	{ $project: { _id:0, sender: 1, recipient: 1, count:1 }}
+])
+result:
+{ "sender" : "susan.mara@enron.com", "recipient" : "jeff.dasovich@enron.com", "count" : 750 }
+
+
+
+
