@@ -1,8 +1,7 @@
-import ValidationError from '../errors/ValidationError.component';
-
 const path = require('path');
 const fs = require('fs');
 const _ = require('lodash');
+const ValidationError = require('../errors/ValidationError.component');
 
 function readFilePromise() {
 	return new Promise((resolve, reject) => {
