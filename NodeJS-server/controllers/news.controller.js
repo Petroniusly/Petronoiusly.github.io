@@ -1,114 +1,131 @@
+import ValidationError from '../errors/ValidationError.component';
+
 const path = require('path');
 const fs = require('fs');
 const _ = require('lodash');
-const ValidationError = require('../errors/ValidationError.component')
+
+function readFilePromise() {
+	return new Promise((resolve, reject) => {
+		fs.readFile('./mockData.json', 'utf8', (err, data) => {
+			if (err) reject(err);
+			resolve(data);
+		});
+	});
+}
+
+function parseData(data) {
+	try {
+		return JSON.parse(data);
+	} catch (e) {
+		throw new ValidationError(`intern DB error: ${e}`);
+	}
+}
+
+function writeFilePromise(code, data) {
+	return new Promise((resolve, reject) => {
+		fs.writeFile('./mockData.json', JSON.stringify(data, null, 2), err => {
+			if (err) reject(err);
+			resolve(code);
+		});
+	});
+}
 
 function getArticleById(req, res, next) {
-  fs.readFile('./mockData.json', 'utf8', (err, data) => {
-    if (err) next(err);
-  
-    let newData = JSON.parse(data);
-    if (_.isUndefined(newData[req.params.id])) {
-      next(new ValidationError(`article with id = ${req.params.id} is not found`));
-    } else {
-      res.json(newData[req.params.id]);
-    }
-  });
+	readFilePromise()
+		.then(parseData)
+		.then(data => {
+			if (_.isUndefined(data[req.params.id])) {
+				throw new ValidationError(
+					`article with id = ${req.params.id} is not found`
+				);
+			} else {
+				res.json(data[req.params.id]);
+			}
+		})
+		.catch(err => next(err));
 }
 
-function getNewsBlock(req,res,next) {
-  fs.readFile('./mockData.json', 'utf8', (err, data) => {
-    if (err) next(err);
-
-    res.json(JSON.parse(data));
-  })
+function getNewsBlock(req, res, next) {
+	readFilePromise()
+		.then(parseData)
+		.then(data => res.json(data))
+		.catch(err => next(err));
 }
 
-function putOneArticleById(req,res,next) {
-  fs.readFile('./mockData.json', 'utf8', (err, data) => {
-    if (err) next(err);
-    
-    let newData = JSON.parse(data);
-    if (_.isUndefined(newData[req.params.id])) {
-      newData[req.params.id] = req.body;
-      fs.writeFile('./mockData.json', JSON.stringify(newData, null, 2), (err, data) => {
-        if (err) next(err);
-    
-        res.status(201).send();
-      });
-    } else {
-      next(new ValidationError(`article with id = ${req.params.id} is already exist`));
-    }
-  });
+function putOneArticleById(req, res, next) {
+	readFilePromise()
+		.then(parseData)
+		.then(data => {
+			if (_.isUndefined(data[req.params.id])) {
+				data[req.params.id] = req.body;
+				return writeFilePromise(201, data);
+			} else {
+				throw new ValidationError(
+					`article with id = ${req.params.id} is already exist`
+				);
+			}
+		})
+		.then(code => res.status(code).send())
+		.catch(err => next(err));
 }
 
-function putNewsBlock(req,res,next) {
-  fs.readFile('./mockData.json', 'utf8', (err, data) => {
-    if (err) next(err);
-    
-    let newData = JSON.parse(data);
-    if (_.isUndefined(newData)) {
-      fs.writeFile('./mockData.json', JSON.stringify(newData, null, 2), (err, data) => {
-        if (err) next(err);
-    
-        res.status(201).send();
-      });
-    } else {
-      next(new ValidationError(`news block is already exist`));
-    }
-  });
+function putNewsBlock(req, res, next) {
+	readFilePromise()
+		.then(parseData)
+		.then(data => {
+			if (_.isUndefined(data)) {
+				return writeFilePromise(201, data);
+			} else {
+				throw new ValidationError(`news block is already exist`);
+			}
+		})
+		.then(code => res.status(code).send())
+		.catch(err => next(err));
 }
 
-function updateArticleById(req,res,next) {
-  fs.readFile('./mockData.json', 'utf8', (err, data) => {
-    if (err) next(err);
-    
-    let newData = JSON.parse(data);
-    if (_.isUndefined(newData[req.params.id])) {
-      next(new ValidationError(`article with id = ${req.params.id} is not found to be updated`));
-    } else {
-      newData[req.params.id] = req.body;
-      fs.writeFile('./mockData.json', JSON.stringify(newData, null, 2), (err, data) => {
-        if (err) next(err);
-    
-        res.status(200).send();
-      });
-    }
-  });
+function updateArticleById(req, res, next) {
+	readFilePromise()
+		.then(parseData)
+		.then(data => {
+			if (_.isUndefined(data[req.params.id])) {
+				throw new ValidationError(
+					`article with id = ${req.params.id} is not found to be updated`
+				);
+			} else {
+				data[req.params.id] = req.body;
+				return writeFilePromise(200, data);
+			}
+		})
+		.then(code => res.status(code).send())
+		.catch(err => next(err));
 }
 
-function updateNewsBlock(req,res,next) {
-  fs.writeFile('./mockData.json', JSON.stringify(req.body, null, 2), (err, data) => {
-    if (err) next(err);
-    
-    res.status(200).send();
-  });
+function updateNewsBlock(req, res, next) {
+	writeFilePromise(200, req.body)
+		.then(code => res.status(code).send())
+		.catch(err => next(err));
 }
 
-function deleteArticleById(req,res,next) {
-  fs.readFile('./mockData.json', 'utf8', (err, data) => {
-    if (err) next(err);
-    
-    let parsedData = JSON.parse(data);
-    if (_.isUndefined(parsedData[req.params.id])) {
-      next(new ValidationError(`article with id = ${req.params.id} is not exist`));
-    } else {
-      let newData = _.omit(parsedData, [req.params.id]);
-      fs.writeFile('./mockData.json', JSON.stringify(newData, null, 2), (err, data) => {
-        if (err) next(err);
-        
-        res.status(200).send();
-      });
-    }
-  });
+function deleteArticleById(req, res, next) {
+	readFilePromise()
+		.then(parseData)
+		.then(data => {
+			if (_.isUndefined(data[req.params.id])) {
+				throw new ValidationError(
+					`article with id = ${req.params.id} is not exist`
+				);
+			} else {
+				return writeFilePromise(200, _.omit(data, [req.params.id]));
+			}
+		})
+		.then(code => res.status(code).send())
+		.catch(err => next(err));
 }
 
-function deleteNewsBlock(req,res,next) {
-  fs.writeFile('./mockData.json', JSON.stringify({}), (err, data) => {
-    if (err) next(err);
-    
-    res.status(200).send();
-  });
+function deleteNewsBlock(req, res, next) {
+	writeFilePromise(200, {})
+		.then(code => res.status(code).send())
+		.catch(err => next(err));
 }
 
 // Read

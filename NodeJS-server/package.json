@@ -5,8 +5,8 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "set NODE_ENV=production&& node app.js",
-    "dev": "set NODE_ENV=development&& node app.js"
+    "start": "cross-env NODE_ENV=production node app.js",
+    "dev": "cross-env NODE_ENV=development node app.js"
   },
   "author": "Petr Blinkov",
   "license": "MIT",
@@ -14,5 +14,9 @@
     "express": "^4.16.4",
     "lodash": "^4.17.11",
     "winston": "^3.1.0"
+  },
+  "devDependencies": {
+    "cross-env": "^5.2.0",
+    "lint-staged": "^8.1.3"
   }
 }

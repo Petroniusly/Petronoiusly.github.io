@@ -2,7 +2,6 @@ const logger = require('./logger');
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const MESSAGE = 'Internal Server Error';
 
-
 /**
  * Express standard error middleware
  *
@@ -12,18 +11,17 @@ const MESSAGE = 'Internal Server Error';
  * @param  {Function}   next    express next function
  */
 let serverErrors = (err, req, res, next) => {
-  res.status(err.code || HTTP_INTERNAL_SERVER_ERROR).json(err.message || MESSAGE);
+	res.status(err.code || HTTP_INTERNAL_SERVER_ERROR).json(err.error || MESSAGE);
 };
 
 let clientErrors = (err, req, res, next) => {
-  if (req.xhr) {
-    logger.logClientError(`Something failed in request`)
-    res.status(500).send({ error: 'Something failed!' });
-  } else {
-    next(err);
-  }
+	if (req.xhr) {
+		logger.logClientError(`Something failed in request`);
+		res.status(500).send({ error: 'Something failed!' });
+	} else {
+		next(err);
+	}
 };
-
 
 /**
  * Module exports
