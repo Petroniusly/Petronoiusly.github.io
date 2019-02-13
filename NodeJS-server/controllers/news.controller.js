@@ -1,129 +1,143 @@
 const path = require('path');
-const fs = require('fs');
 const _ = require('lodash');
+const errorHandler = require('../handlers/errorHandler');
 const ValidationError = require('../errors/ValidationError.component');
+const newsDB = require('../models/news.model');
 
-function readFilePromise() {
+function updateArticlePromise(req) {
 	return new Promise((resolve, reject) => {
-		fs.readFile('./mockData.json', 'utf8', (err, data) => {
-			if (err) reject(err);
-			resolve(data);
-		});
+		newsDB
+			.update({ id: req.params.id }, req.body, {
+				runValidators: true,
+				upsert: false
+			})
+			.exec((err, docs) => {
+				if (err) reject(err);
+				resolve(docs);
+			});
 	});
 }
 
-function parseData(data) {
-	try {
-		return JSON.parse(data);
-	} catch (e) {
-		throw new ValidationError(`intern DB error: ${e}`);
-	}
-}
-
-function writeFilePromise(code, data) {
+function deleteArticlePromise(id) {
 	return new Promise((resolve, reject) => {
-		fs.writeFile('./mockData.json', JSON.stringify(data, null, 2), err => {
+		newsDB.deleteOne({ id: id }).exec((err, docs) => {
 			if (err) reject(err);
-			resolve(code);
+			resolve(docs);
 		});
 	});
 }
 
 function getArticleById(req, res, next) {
-	readFilePromise()
-		.then(parseData)
-		.then(data => {
-			if (_.isUndefined(data[req.params.id])) {
-				throw new ValidationError(
-					`article with id = ${req.params.id} is not found`
-				);
-			} else {
-				res.json(data[req.params.id]);
-			}
-		})
+	return new Promise((resolve, reject) => {
+		newsDB
+			.findOne({ id: req.params.id })
+			.select('-_id -__v')
+			.lean()
+			.exec((err, docs) => {
+				if (err) reject(err);
+				if (_.isNull(docs))
+					reject(
+						new ValidationError(
+							`article with id = ${req.params.id} is not found`
+						)
+					);
+				resolve(docs);
+			});
+	})
+		.then(data => res.json(data))
 		.catch(err => next(err));
 }
 
 function getNewsBlock(req, res, next) {
-	readFilePromise()
-		.then(parseData)
+	return new Promise((resolve, reject) => {
+		newsDB
+			.find()
+			.select('-_id -__v')
+			.exec((err, docs) => {
+				if (err) reject(err);
+				if (_.isNull(docs)) reject(new ValidationError(`database is empty`));
+				resolve(docs);
+			});
+	})
 		.then(data => res.json(data))
 		.catch(err => next(err));
 }
 
 function putOneArticleById(req, res, next) {
-	readFilePromise()
-		.then(parseData)
-		.then(data => {
-			if (_.isUndefined(data[req.params.id])) {
-				data[req.params.id] = req.body;
-				return writeFilePromise(201, data);
-			} else {
-				throw new ValidationError(
-					`article with id = ${req.params.id} is already exist`
-				);
-			}
-		})
-		.then(code => res.status(code).send())
-		.catch(err => next(err));
+	return new Promise((resolve, reject) => {
+		let data = _.assign(req.body, {
+			id: req.params.id
+		});
+		newsDB.create(data, function(err, res) {
+			if (err) reject(err);
+			resolve(res);
+		});
+	})
+		.then(code => res.status(201).send())
+		.catch(err => {
+			next(errorHandler.databaseErrors(err));
+		});
 }
 
 function putNewsBlock(req, res, next) {
-	readFilePromise()
-		.then(parseData)
+	newsDB
+		.insertMany(req.body, { ordered: false, rawResult: true })
 		.then(data => {
-			if (_.isUndefined(data)) {
-				return writeFilePromise(201, data);
-			} else {
-				throw new ValidationError(`news block is already exist`);
-			}
+			if (_.isEmpty(data))
+				throw new ValidationError(`provided News block is invalid`);
+			res.status(200).send(data);
 		})
-		.then(code => res.status(code).send())
 		.catch(err => next(err));
 }
 
 function updateArticleById(req, res, next) {
-	readFilePromise()
-		.then(parseData)
-		.then(data => {
-			if (_.isUndefined(data[req.params.id])) {
-				throw new ValidationError(
-					`article with id = ${req.params.id} is not found to be updated`
-				);
-			} else {
-				data[req.params.id] = req.body;
-				return writeFilePromise(200, data);
-			}
-		})
-		.then(code => res.status(code).send())
-		.catch(err => next(err));
+	updateArticlePromise(req)
+		.then(() => res.status(200).send())
+		.catch(err => {
+			next(new ValidationError(err.message));
+		});
 }
 
 function updateNewsBlock(req, res, next) {
-	writeFilePromise(200, req.body)
-		.then(code => res.status(code).send())
-		.catch(err => next(err));
+	Promise.all(
+		_.forEach(req.body, article => {
+			return updateArticlePromise(article);
+		})
+	)
+		// Error logger works incorrect
+		.then(() => res.status(200).send())
+		.catch(err => {
+			next(new ValidationError(err.message));
+		});
 }
 
 function deleteArticleById(req, res, next) {
-	readFilePromise()
-		.then(parseData)
+	deleteArticlePromise(req.params.id)
 		.then(data => {
-			if (_.isUndefined(data[req.params.id])) {
-				throw new ValidationError(
-					`article with id = ${req.params.id} is not exist`
-				);
-			} else {
-				return writeFilePromise(200, _.omit(data, [req.params.id]));
-			}
+			if (_.isEqual(data.n, data.ok)) res.status(200).send();
+			throw new ValidationError(
+				`article with id = ${req.params.id} is not exist`
+			);
 		})
-		.then(code => res.status(code).send())
 		.catch(err => next(err));
 }
 
 function deleteNewsBlock(req, res, next) {
-	writeFilePromise(200, {})
-		.then(code => res.status(code).send())
+	Promise.all(
+		_.map(req.body, id => {
+			return deleteArticlePromise(id);
+		})
+	)
+		.then(results => {
+			successResults = _.filter(results, result =>
+				_.isEqual(result.n, result.ok)
+			);
+			if (successResults.length !== results.length) {
+				throw new ValidationError(`some articles are not exist already`);
+			} else {
+				res.status(200).send();
+			}
+		})
 		.catch(err => next(err));
 }
 

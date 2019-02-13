@@ -14,6 +14,13 @@ let serverErrors = (err, req, res, next) => {
 	res.status(err.code || HTTP_INTERNAL_SERVER_ERROR).json(err.error || MESSAGE);
 };
 
+let databaseErrors = err => {
+	return {
+		code: HTTP_INTERNAL_SERVER_ERROR,
+		error: err.errmsg
+	};
+};
+
 let clientErrors = (err, req, res, next) => {
 	if (req.xhr) {
 		logger.logClientError(`Something failed in request`);
@@ -27,4 +34,5 @@ let clientErrors = (err, req, res, next) => {
  * Module exports
  */
 module.exports.serverErrors = serverErrors;
+module.exports.databaseErrors = databaseErrors;
 module.exports.clientErrors = clientErrors;
